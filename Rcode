@@ -1,0 +1,99 @@
+# Using Ridge regression to analysis snow depth in mankato
+# Libraryies
+library(car) #vif library
+library(olsrr) #olsviftol library and backward p AIC
+library(MASS) # ridge regression
+library(dplyr)#standardize variables
+library(glmnet)# option 2
+library(ISLR)
+library(tidyverse)
+library(glmnetUtils)
+library(plotmo)
+
+##TESTING MULTICOLLINEARITY
+data1<-read.csv("bodyfat.csv")
+attach(data1)
+cor(data1)
+eigen(cor(data1))$values
+kappa(cor(data1),exact=TRUE)
+mymodel<-lm(BodyFat~Weight+Chest+Abdomen+Hip+Thigh+Biceps)
+ols_vif_tol(mymodel)
+
+##rmse rsquare function
+eval_results <- function(true, predicted, df) {
+  SSE <- sum((predicted - true)^2)
+  SST <- sum((true - mean(true))^2)
+  R_square <- 1 - SSE / SST
+  RMSE = sqrt(SSE/nrow(df))
+  data.frame(
+    RMSE = RMSE,
+    Rsquare = R_square
+  )
+  
+}
+
+data1$BodyFat
+linmod<-lm(BodyFat~Weight+Chest+Abdomen+Hip+Thigh+Biceps)
+pred<-predict(linmod,newx=data1) 
+eval_results(y, pred, data1)
+
+
+## RIDGE REGRESSION
+data2=data.frame(scale(data1))
+y<-data1$BodyFat
+x<-data.matrix(data1[,c('Weight','Chest','Abdomen','Hip','Thigh','Biceps')])
+ridgeo<-cv.glmnet(x,y,alpha=0,standardize=FALSE)
+blambda<-ridge3$lambda.min
+blambda
+ridge3<-glmnet(x,y,alpha=0,lambda=0.08220827)
+coef(ridge3)
+
+## ridge regression PREDICTTION option 1
+ridgen<-glmnet(x,y,alpha=0)
+plot(ridgen,xvar="lambda",label=TRUE)
+ridgeo<-cv.glmnet(x,y,alpha=0)
+plot(ridgeo)
+ridge3<-cv.glmnet(BodyFat~.,alpha=0,data=data1)
+plot(ridge3)
+coef(ridge3)
+lm_seq=seq(0,1,0.01)
+ridgem<-lm.ridge(BodyFat~Weight+Chest+Abdomen+Hip+Thigh+Biceps,data=data2,lambda=lm_seq)
+select(ridgem)
+## ridge regression PREDICTTION option 2
+y<-data2$BodyFat
+x<-data.matrix(data2[,c('Weight','Chest','Abdomen','Hip','Thigh','Biceps')])
+ridgeo<-cv.glmnet(x,y,alpha=0,standardize=FALSE)
+blambda<-ridge3$lambda.min
+blambda
+ridge<-glmnet(x,y,alpha=0)
+pred<-predict(ridge,newx=data2,s=ridgeo$lambda.min)
+
+
+
+##LASSO Regression rcode
+
+library(mlbench)
+library(tidyverse)
+library(broom)
+library(glmnet)
+lasso1<-cv.glmnet(x,y,alpha=1,standardize=FALSE)
+blambda<-lasso1$lambda.min  
+lasso<-glmnet(x,y,alpha=1)
+pred<-predict(lasso,newx=data2,s=lasso1$lambda.min)
+
+##PCA CODE
+
+library(pls)
+bodyfatx<-data1[,-1]
+bodyfatpca<-prcomp(bodyfatx, center = TRUE,scale=TRUE)
+summary(bodyfatpca)
+plot(bodyfatpca,type="l")
+train<-data1[1:200,c("BodyFAt”,"Weight","Chest","Abdomen","Hip","Thigh","Biceps")]
+y_test<-data1[201:nrow(data1),c("BodyFat")]
+test<-data1[201:nrow(data1),c("Weight","Chest","Abdomen","Hip","Thigh","Biceps")]
+
+pcr_model <- pcr(BodyFat~., data = train,scale =TRUE, validation = "CV")
+pcr.fit <- train(BodyFat ~., data=train,preProc = c('center', 'scale'),method='pcr')
+pcr.fit <- train(BodyFat ~., data=train,
+                 preProc = c('center', 'scale'),
+                 method='pcr')
