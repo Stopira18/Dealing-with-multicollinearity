@@ -11,10 +11,10 @@ library(glmnetUtils)
 library(plotmo)
 
 ##TESTING MULTICOLLINEARITY
-data1<-read.csv("bodyfat.csv")
+data1<-read.csv("bodyfat.csv") ## read data
 attach(data1)
-cor(data1)
-eigen(cor(data1))$values
+cor(data1) ## correlation score
+eigen(cor(data1))$values ## eigen score
 kappa(cor(data1),exact=TRUE)
 mymodel<-lm(BodyFat~Weight+Chest+Abdomen+Hip+Thigh+Biceps)
 ols_vif_tol(mymodel)
